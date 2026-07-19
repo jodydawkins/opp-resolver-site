@@ -1,0 +1,11 @@
+<section class="result-shell" aria-labelledby="result-title">
+  <p class="eyebrow">Resolution result</p>
+  <h1 id="result-title"><%= @result.ok? ? "Subject resolved" : "Resolution stopped" %></h1>
+  <% unless @result.ok? %>
+    <div class="error" role="alert">
+      <strong><%= @result.error_code.to_s.tr("_", " ").capitalize %></strong>
+      <p><%= @result.message %></p>
+    </div>
+  <% end %>
+  <p><a href="/">Resolve another subject</a></p>
+</section>
