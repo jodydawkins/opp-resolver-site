@@ -19,6 +19,20 @@ module OppSpecHelpers
 
     OPP::Signature.sign(document, private_key: pair.private_key)
   end
+
+  def signed_presence(pair: OPP::KeyPair.generate, overrides: {})
+    document = {
+      "type" => "open-presence",
+      "version" => "0.1",
+      "issued_at" => "2026-07-18T11:00:00Z",
+      "expires_at" => "2026-07-19T11:00:00Z",
+      "services" => [
+        { "type" => "profile", "url" => "https://example.com/profile" }
+      ]
+    }.merge(overrides)
+
+    OPP::Presence.sign(document, private_key: pair.private_key)
+  end
 end
 
 RSpec.configure do |config|

@@ -27,4 +27,10 @@ RSpec.describe OppResolver::App do
   ensure
     app.set :resolver_factory, app.default_resolver_factory
   end
+
+  it "builds the production resolver from the application configuration" do
+    app.set :resolver_factory, app.default_resolver_factory
+
+    expect(app.settings.resolver_factory).to be_a(OppResolver::Resolver)
+  end
 end

@@ -2,6 +2,7 @@
 
 require "sinatra/base"
 require_relative "lib/opp_resolver/result"
+require_relative "lib/opp_resolver/resolver"
 
 module OppResolver
   class App < Sinatra::Base
@@ -9,7 +10,11 @@ module OppResolver
     EXAMPLE_SUBJECT = "key:sha256:r04mk-KJfvTnlnVSTUpnT283CGbHSWJkFMevj-G72Ts"
 
     def self.default_resolver_factory
-      -> { raise "resolver is not configured yet" }
+      -> do
+        Resolver.new(
+          directory_url: ENV.fetch("OPP_DIRECTORY_URL", DEFAULT_DIRECTORY_URL)
+        )
+      end
     end
 
     set :resolver_factory, default_resolver_factory
