@@ -1,0 +1,21 @@
+<section class="hero" aria-labelledby="page-title">
+  <p class="eyebrow">Open Presence Protocol</p>
+  <h1 id="page-title">Resolve an OPP Subject</h1>
+  <p class="lede">Follow one cryptographic identity from directory discovery to independently verified service endpoints.</p>
+
+  <form class="resolver-form" action="/resolve" method="post">
+    <label for="subject">Exact OPP subject</label>
+    <div class="input-row">
+      <input id="subject" name="subject" type="text" value="<%= self.class::EXAMPLE_SUBJECT %>" required spellcheck="false" autocomplete="off">
+      <button type="submit">Resolve subject</button>
+    </div>
+    <p class="input-hint">The example above is a real subject published through the reference directory.</p>
+  </form>
+</section>
+
+<ol class="trust-preview" aria-label="Resolution trust chain">
+  <li><span>01</span><strong>Directory</strong><small>Discover the current registration</small></li>
+  <li><span>02</span><strong>Registration</strong><small>Verify subject ownership and location</small></li>
+  <li><span>03</span><strong>Presence</strong><small>Verify the independent document</small></li>
+  <li><span>04</span><strong>Services</strong><small>Reveal trusted endpoints</small></li>
+</ol>
