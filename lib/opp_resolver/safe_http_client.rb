@@ -92,22 +92,22 @@ module OppResolver
     def get(url, public_only:)
       uri = valid_uri(url)
       ipaddr = public_only ? validated_address(uri.host) : nil
-      status, headers, chunks = transport.get(
+      transport.get(
         uri:,
         ipaddr: ipaddr&.to_s,
         open_timeout:,
         read_timeout:
-      ) { |*response| response }
+      ) do |status, headers, chunks|
+        fail_with(:redirect, "Redirects are not allowed.") if status.between?(300, 399)
 
-      fail_with(:redirect, "Redirects are not allowed.") if status.between?(300, 399)
+        body = read_body(headers, chunks)
+        content_type = normalized_content_type(headers)
+        if status.between?(200, 299) && !json_content_type?(content_type)
+          fail_with(:invalid_content_type, "The remote service did not return JSON.")
+        end
 
-      body = read_body(headers, chunks)
-      content_type = normalized_content_type(headers)
-      if status.between?(200, 299) && !json_content_type?(content_type)
-        fail_with(:invalid_content_type, "The remote service did not return JSON.")
+        Response.new(status, body, content_type)
       end
-
-      Response.new(status, body, content_type)
     rescue Failure
       raise
     rescue Net::OpenTimeout, Net::ReadTimeout, Timeout::Error

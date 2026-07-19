@@ -31,6 +31,20 @@ RSpec.describe OppResolver::SafeHttpClient do
     end
   end
 
+  class BlockScopedTransport
+    def get(**)
+      active = true
+      chunks = Enumerator.new do |stream|
+        raise IOError, "attempt to read body out of block" unless active
+
+        stream << "{}"
+      end
+      yield 200, { "content-type" => ["application/json"] }, chunks
+    ensure
+      active = false
+    end
+  end
+
   let(:public_ip) { IPAddr.new("93.184.216.34") }
   let(:resolver) { FakeResolver.new([public_ip], nil) }
   let(:transport) { FakeTransport.new }
@@ -61,6 +75,12 @@ RSpec.describe OppResolver::SafeHttpClient do
       open_timeout: 1,
       read_timeout: 2
     )
+  end
+
+  it "consumes the response body while the transport response block is active" do
+    client = described_class.new(resolver:, transport: BlockScopedTransport.new)
+
+    expect(client.get("https://presence.example/opp.json", public_only: true).body).to eq("{}")
   end
 
   it "allows a trusted directory request without public-address resolution" do
