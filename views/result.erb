@@ -1,11 +1,150 @@
-<section class="result-shell" aria-labelledby="result-title">
-  <p class="eyebrow">Resolution result</p>
-  <h1 id="result-title"><%= @result.ok? ? "Subject resolved" : "Resolution stopped" %></h1>
-  <% unless @result.ok? %>
-    <div class="error" role="alert">
-      <strong><%= @result.error_code.to_s.tr("_", " ").capitalize %></strong>
-      <p><%= @result.message %></p>
+<header class="result-header">
+  <div>
+    <p class="eyebrow">Resolution result</p>
+    <h1 id="result-title"><%= @result.success? ? "Trust chain verified" : "Resolution stopped" %></h1>
+  </div>
+  <a class="secondary-action" href="/">Resolve another subject</a>
+</header>
+
+<% if @result.success? %>
+  <% registration = @result.details.fetch(:registration) %>
+  <% presence = @result.details.fetch(:presence) %>
+
+  <ol class="trust-chain" aria-label="Verified OPP trust chain">
+    <li class="trust-step verified">
+      <div class="trust-marker" aria-hidden="true"><span>01</span></div>
+      <section aria-labelledby="resolution-heading">
+        <div class="section-heading">
+          <div>
+            <p class="stage-label">Discovery</p>
+            <h2 id="resolution-heading">Resolution</h2>
+          </div>
+          <span class="status verified-status">Found</span>
+        </div>
+        <dl class="fact-grid">
+          <div><dt>Requested subject</dt><dd class="protocol-value"><%= h @result.details.fetch(:subject) %></dd></div>
+          <div><dt>Directory used</dt><dd><a href="<%= h @result.details.fetch(:directory_url) %>"><%= h @result.details.fetch(:directory_url) %></a></dd></div>
+          <div><dt>Registration</dt><dd>Current record found</dd></div>
+        </dl>
+      </section>
+    </li>
+
+    <li class="trust-step verified">
+      <div class="trust-marker" aria-hidden="true"><span>02</span></div>
+      <section aria-labelledby="registration-heading">
+        <div class="section-heading">
+          <div>
+            <p class="stage-label">Directory claim</p>
+            <h2 id="registration-heading">Directory Registration</h2>
+          </div>
+          <span class="status verified-status">Verified</span>
+        </div>
+        <dl class="fact-grid">
+          <div><dt>Registration subject</dt><dd class="protocol-value"><%= h registration.fetch("subject") %></dd></div>
+          <div><dt>Document URL</dt><dd><a href="<%= h registration.fetch("document_url") %>"><%= h registration.fetch("document_url") %></a></dd></div>
+          <div><dt>Sequence</dt><dd><%= h registration.fetch("sequence") %></dd></div>
+          <div><dt>Issued</dt><dd><time datetime="<%= h registration.fetch("issued_at") %>"><%= h registration.fetch("issued_at") %></time></dd></div>
+        </dl>
+      </section>
+    </li>
+
+    <li class="trust-step verified">
+      <div class="trust-marker" aria-hidden="true"><span>03</span></div>
+      <section aria-labelledby="presence-heading">
+        <div class="section-heading">
+          <div>
+            <p class="stage-label">Independent authority</p>
+            <h2 id="presence-heading">Presence Document</h2>
+          </div>
+          <span class="status verified-status">Retrieved + verified</span>
+        </div>
+        <dl class="fact-grid">
+          <div><dt>Presence subject</dt><dd class="protocol-value"><%= h presence.fetch("subject") %></dd></div>
+          <div><dt>Issued</dt><dd><time datetime="<%= h presence.fetch("issued_at") %>"><%= h presence.fetch("issued_at") %></time></dd></div>
+          <% if presence["expires_at"] %>
+            <div><dt>Expires</dt><dd><time datetime="<%= h presence["expires_at"] %>"><%= h presence["expires_at"] %></time></dd></div>
+          <% end %>
+        </dl>
+      </section>
+    </li>
+
+    <li class="trust-step verified">
+      <div class="trust-marker" aria-hidden="true"><span>04</span></div>
+      <section aria-labelledby="services-heading">
+        <div class="section-heading">
+          <div>
+            <p class="stage-label">Trusted output</p>
+            <h2 id="services-heading">Services</h2>
+          </div>
+          <span class="status verified-status"><%= h @result.details.fetch(:services).length %> verified</span>
+        </div>
+        <% if @result.details.fetch(:services).empty? %>
+          <p class="empty-state">This verified Presence Document does not publish any services.</p>
+        <% else %>
+          <div class="service-list">
+            <% @result.details.fetch(:services).each do |service| %>
+              <a class="service-card" href="<%= h service.fetch("url") %>">
+                <span class="service-type"><%= h service.fetch("type") %></span>
+                <span class="service-url"><%= h service.fetch("url") %></span>
+                <span class="service-arrow" aria-hidden="true">↗</span>
+              </a>
+            <% end %>
+          </div>
+        <% end %>
+      </section>
+    </li>
+  </ol>
+
+  <section class="raw-section" aria-labelledby="raw-heading">
+    <p class="stage-label">Inspection</p>
+    <h2 id="raw-heading">Raw documents</h2>
+    <p>These are the exact verified documents behind the result.</p>
+    <details class="raw-document">
+      <summary>Directory Registration JSON</summary>
+      <pre><code><%= h @result.details.fetch(:registration_json) %></code></pre>
+    </details>
+    <details class="raw-document">
+      <summary>Presence Document JSON</summary>
+      <pre><code><%= h @result.details.fetch(:presence_json) %></code></pre>
+    </details>
+  </section>
+<% else %>
+  <section class="failure-panel" aria-labelledby="failure-heading">
+    <div class="failure-mark" aria-hidden="true">×</div>
+    <div>
+      <p class="stage-label">Verification halted</p>
+      <h2 id="failure-heading"><%= h @result.error_code.to_s.tr("_", " ").capitalize %></h2>
+      <p class="failure-message"><%= h @result.message %></p>
     </div>
+  </section>
+
+  <% if @result.details[:subject] || @result.details[:directory_url] %>
+    <dl class="failure-context">
+      <% if @result.details[:subject] %>
+        <div><dt>Requested subject</dt><dd class="protocol-value"><%= h @result.details[:subject] %></dd></div>
+      <% end %>
+      <% if @result.details[:directory_url] %>
+        <div><dt>Directory</dt><dd><%= h @result.details[:directory_url] %></dd></div>
+      <% end %>
+      <% if @result.details[:stage] %>
+        <div><dt>Stopped at</dt><dd><%= h @result.details[:stage].to_s.capitalize %> verification</dd></div>
+      <% end %>
+    </dl>
   <% end %>
-  <p><a href="/">Resolve another subject</a></p>
-</section>
+
+  <% if @result.details[:verification_errors]&.any? %>
+    <section class="verification-errors" aria-labelledby="errors-heading">
+      <p class="stage-label">Verifier output</p>
+      <h2 id="errors-heading">Why verification stopped</h2>
+      <ul>
+        <% @result.details[:verification_errors].each do |error| %>
+          <li>
+            <code><%= h error.fetch(:code) %></code>
+            <% if error[:path] %><span class="error-path"><%= h error[:path] %></span><% end %>
+            <p><%= h error.fetch(:message) %></p>
+          </li>
+        <% end %>
+      </ul>
+    </section>
+  <% end %>
+<% end %>

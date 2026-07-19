@@ -19,6 +19,12 @@ module OppResolver
 
     set :resolver_factory, default_resolver_factory
 
+    helpers do
+      def h(value)
+        Rack::Utils.escape_html(value.to_s)
+      end
+    end
+
     get "/" do
       erb :index
     end
