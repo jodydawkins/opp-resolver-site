@@ -18,6 +18,12 @@ module OppResolver
     end
 
     set :resolver_factory, default_resolver_factory
+    set :host_authorization, {
+      permitted_hosts: [
+        "resolver.openpresenceprotocol.org",
+        "opp-resolver-site.fly.dev"
+      ]
+    }
 
     helpers do
       def h(value)
